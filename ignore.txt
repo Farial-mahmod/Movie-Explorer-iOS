@@ -1,11 +1,14 @@
 // ignore it
 
 // ContentView
+import Foundation
+import Combine
 
 struct ContentView : View {
 
 @State var chatMessages : [ChatMessage] = []
 @State var messageText: String = ""
+@State var cancellable : = Set<Any>
 var body : some View {
 
 VStack{
@@ -33,9 +36,23 @@ if message.sender == .gpt { Spacer() }
 Text(message.content).padding().cornerRadius(11).background(message.sender==.me ? .pink : .gray).foregroundColor(message.sender==.me ? .blue : .violet)
                                                         }
     }
+
+// sending functionality
 func sendMessage(){
+let mymessage = ChatMessage(id: UUID.uuidString, content: messageText, dateCreated: Date(), sender: .me)
+chatMessages.append(mymessage)
+openAIService.sendMessage(message: messageText).sink { completion in
+//
+} receiveValue: { response in
+guard let textResponse = response.choices?.first.trimmingCharacters(in: .whitespacesAndNewlines.union(.init(charactersIn: "\"))) else
+{ return }
+
+let gptMessage = ChatMessage(id: UUID.uuidString, content: messageText, dateCreated: Date(), sender: .gpt)
+chatMessages.append(gptMessage)
+
+}.store(in: &cancellables)
 messageText = ""
-print(messageText)
+}
 }
                       }
 
@@ -62,17 +79,17 @@ static let openAIAPIKey = "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"
 }
 
 
-// AIService.swift
+// OpenAIService.swift
 import Foundation
 import Alamofire
 import Combine
 
-class AIService{
+class OpenAIService{
 let baseUrl = "https://api.openai.com/v1/completions"
 
 func sendMesssage(message: String) -> AnyPublisher(OpenAICompletionsResponse, Error) {
 
-let body = OpenAICompletionsBody(model: "text-davinci-003", prompt: message, temperature: 0.75)
+let body = OpenAICompletionsBody(model: "text-davinci-003", prompt: message, temperature: 0.75, max_tokens: 255)
 
 let headers: HTTPHeaders = [
 "Authorization": "Bearer \(Constants.openAIAPIKey)"
@@ -84,8 +101,27 @@ AF.request(self.baseUrl + "completions", method: .post, parameters: body, encode
 
 switch response.result{
 case .success(let result):
+          promise(.success(result))
+case .failure(let error):
+          promise(.failure(error))
 }
 
 }
+}.eraseToAnyPublisher()
 }
+
+struct OpenAICompletionsBody: Encodable {
+let model: String
+let prompt: String
+let temperature: Float?
+max_tokens: Int
+}
+
+struct OpenAICompletionsResponse: Decodable {
+let id: String
+let choices: [OpenAICompletionsChoices]
+}
+
+struct OpenAICompletionsChoices: Decodable{
+let text: String
 }
