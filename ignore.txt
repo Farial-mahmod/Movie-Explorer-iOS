@@ -5,18 +5,40 @@
 struct ContentView : View {
 
 @State var chatMessages : [ChatMessage] = []
-
+@State var messageText: String = ""
 var body : some View {
 
+VStack{
 ScrollView{
 LazyVStack{
-//
+ForEach(chatMessages, id: \.id){ message in
+messageView(message)
+          }
 }
 }
-.padding()
+HStack{
+TextField("Ask ChatGPT", text: $messageText).padding().cornerRadius(19)
+Button{
+sendMessage()
+} label: {
+Text("Ask")
+        }
+      }
 
+}.padding()
+// to show messages with colors
+func messageView(_ message: ChatMesssage) -> some View {
+if message.sender == .me { Spacer() }
+if message.sender == .gpt { Spacer() }
+Text(message.content).padding().cornerRadius(11).background(message.sender==.me ? .pink : .gray).foregroundColor(message.sender==.me ? .blue : .violet)
+                                                        }
+    }
+func sendMessage(){
+messageText = ""
+print(messageText)
 }
-}
+                      }
+
 // formation of each message
 struct ChatMessage {
 let id : String
@@ -28,4 +50,29 @@ let sender : MessageSenger
 enum MessageSenger{
 me
 gpt
+}
+
+
+// Constants
+// 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
+import Foundation
+
+enum Constants{
+static let openAIAPIKey = "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"
+}
+
+
+// AIService.swift
+import Foundation
+import Alamofire
+
+class AIService{
+let baseUrl = "https://api.openai.com/v1/completions"
+
+func sendMesssage(message: String){
+
+let body = OpenAICompletionsBody()
+
+let headers = []
+}
 }
