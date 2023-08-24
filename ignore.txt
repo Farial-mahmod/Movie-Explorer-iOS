@@ -1,0 +1,31 @@
+// ignore it
+
+// ContentView
+
+struct ContentView : View {
+
+@State var chatMessages : [ChatMessage] = []
+
+var body : some View {
+
+ScrollView{
+LazyVStack{
+//
+}
+}
+.padding()
+
+}
+}
+// formation of each message
+struct ChatMessage {
+let id : String
+let content : String
+let dateCreated : Date
+let sender : MessageSenger
+}
+// message by me or response by ChatGPT
+enum MessageSenger{
+me
+gpt
+}
